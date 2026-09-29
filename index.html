@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>风景与注意力训练</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      color: #263238;
+      background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+    }
+
+    header {
+      padding: 36px 20px;
+      text-align: center;
+      color: white;
+      background:
+        linear-gradient(rgba(0, 80, 100, 0.65), rgba(0, 60, 70, 0.65)),
+        url("https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1800&q=85")
+        center/cover;
+    }
+
+    header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 5vw, 48px);
+    }
+
+    header p {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    main {
+      width: min(1200px, 94%);
+      margin: 28px auto 50px;
+    }
+
+    .panel {
+      margin-bottom: 28px;
+      padding: 24px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 30px rgba(0, 70, 80, 0.12);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      color: #00695c;
+    }
+
+    .main-photo {
+      position: relative;
+      overflow: hidden;
+      height: min(55vw, 500px);
+      min-height: 260px;
+      border-radius: 16px;
+      background: #cfd8dc;
+    }
+
+    .main-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.3s ease;
+    }
+
+    .photo-caption {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 18px;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+    }
+
+    .photo-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 18px;
+      color: white;
+      background: #00897b;
+      cursor: pointer;
+      font-size: 15px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #00695c;
+      transform: translateY(-2px);
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+    }
+
+    .thumb {
+      height: 75px;
+      padding: 0;
+      overflow: hidden;
+      border: 3px solid transparent;
+      border-radius: 10px;
+      background: none;
+    }
+
+    .thumb.active {
+      border-color: #ff9800;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 20px;
+    }
+
+    .game {
+      min-height: 360px;
+      padding: 20px;
+      border: 1px solid #d7e8e5;
+      border-radius: 16px;
+      background: #fbfffe;
+    }
+
+    .game h3 {
+      margin-top: 0;
+      color: #00796b;
+    }
+
+    .info {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 12px 0;
+      padding: 10px;
+      border-radius: 8px;
+      background: #e0f2f1;
+      font-weight: bold;
+    }
+
+    .target-area {
+      position: relative;
+      height: 210px;
+      overflow: hidden;
+      border-radius: 12px;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.45) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,.45) 25%, transparent 25%),
+        #b2dfdb;
+      background-size: 28px 28px;
+    }
+
+    .target {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      border: 4px solid white;
+      border-radius: 50%;
+      background: #f44336;
+      box-shadow: 0 3px 10px rgba(0,0,0,.25);
+      cursor: pointer;
+      display: none;
+    }
+
+    .memory-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .memory-card {
+      height: 58px;
+      padding: 0;
+      font-size: 24px;
+      background: #26a69a;
+    }
+
+    .memory-card.open {
+      color: #263238;
+      background: #fff59d;
+    }
+
+    .color-box {
+      padding: 32px 10px;
+      border-radius: 12px;
+      color: white;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .color-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .color-options button {
+      color: white;
+      font-weight: bold;
+    }
+
+    .red { background: #e53935; }
+    .blue { background: #1e88e5; }
+    .green { background: #43a047; }
+    .yellow { background: #f9a825; }
+
+    .result {
+      min-height: 25px;
+      margin-top: 12px;
+      color: #546e7a;
+      font-weight: bold;
+    }
+
+    .tip {
+      padding: 15px;
+      border-left: 5px solid #ffb300;
+      border-radius: 8px;
+      background: #fff8e1;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 600px) {
+      .panel {
+        padding: 16px;
+      }
+
+      .games {
+        grid-template-columns: 1fr;
+      }
+
+      .memory-board {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>自然风景与注意力训练</h1>
+    <p>欣赏风景，放松身心，同时挑战你的观察力和反应力</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>风景图片欣赏</h2>
+
+      <div class="main-photo">
+        <img id="mainImage" src="" alt="风景图片" />
+        <div class="photo-caption" id="photoCaption"></div>
+      </div>
+
+      <div class="photo-buttons">
+        <button onclick="previousPhoto()">上一张</button>
+        <button onclick="toggleAutoPlay()" id="autoBtn">暂停轮播</button>
+        <button onclick="nextPhoto()">下一张</button>
+      </div>
+
+      <div class="thumbs" id="thumbs"></div>
+    </section>
+
+    <section class="panel">
+      <h2>注意力小游戏</h2>
+
+      <div class="games">
+        <!-- 游戏一 -->
+        <div class="game">
+          <h3>1. 快速点击目标</h3>
+          <p>在限定时间内点击尽可能多的红色目标。</p>
+
+          <div class="info">
+            <span>时间：<span id="targetTime">30</span>s</span>
+            <span>得分：<span id="targetScore">0</span></span>
+          </div>
+
+          <button onclick="startTargetGame()">开始游戏</button>
+
+          <div class="target-area" id="targetArea">
+            <button class="target" id="target"></button>
+          </div>
+
+          <div class="result" id="targetResult"></div>
+        </div>
+
+        <!-- 游戏二 -->
+        <div class="game">
+          <h3>2. 记忆翻牌</h3>
+          <p>翻开卡片，找出所有相同的图案。</p>
+
+          <div class="info">
+            <span>步数：<span id="memoryMoves">0</span></span>
+            <span>配对：<span id="memoryPairs">0</span>/8</span>
+          </div>
+
+          <button onclick="startMemoryGame()">重新开始</button>
+
+          <div class="memory-board" id="memoryBoard"></div>
+
+          <div class="result" id="memoryResult"></div>
+        </div>
+
+        <!-- 游戏三 -->
+        <div class="game">
+          <h3>3. 颜色反应</h3>
+          <p>根据上方文字选择正确的颜色，不要被背景颜色干扰。</p>
+
+          <div class="color-box" id="colorWord">准备开始</div>
+
+          <div class="color-options">
+            <button class="red" onclick="chooseColor('红色')">红色</button>
+            <button class="blue" onclick="chooseColor('蓝色')">蓝色</button>
+            <button class="green" onclick="chooseColor('绿色')">绿色</button>
+            <button class="yellow" onclick="chooseColor('黄色')">黄色</button>
+          </div>
+
+          <div class="info">
+            <span>得分：<span id="colorScore">0</span></span>
+            <span>题数：<span id="colorRound">0</span></span>
+          </div>
+
+          <button onclick="startColorGame()">开始游戏</button>
+
+          <div class="result" id="colorResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>训练建议</h2>
+      <div class="tip">
+        每次训练 5～10 分钟即可。建议先进行风景欣赏放松，再挑战记忆翻牌和颜色反应。
+        如果发现注意力下降，可以休息几分钟后继续。
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =========================
+    // 风景图片功能
+    // =========================
+
+    const photos = [
+      {
+        title: "宁静的湖泊",
+        url: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1400&q=85"
+      },
+      {
+        title: "雪山与森林",
+        url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=85"
+      },
+      {
+        title: "海边日落",
+        url: "https://images.unsplash.com/photo-150752充?auto=format&fit=crop&w=1400&q=85"
+      },
+      {
+        title: "绿色山谷",
+        url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1400&q=85"
+      },
+      {
+        title: "沙漠星空",
+        url: "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1400&q=85"
+      }
+    ];
+
+    // 修正图片地址中的特殊字符
+    photos[2].url =
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85";
+
+    let photoIndex = 0;
+    let autoPlay = true;
+    let photoTimer;
+
+    const mainImage = document.getElementById("mainImage");
+    const photoCaption = document.getElementById("photoCaption");
+    const thumbs = document.getElementById("thumbs");
+
+    function showPhoto(index) {
+      photoIndex = (index + photos.length) % photos.length;
+      mainImage.src = photos[photoIndex].url;
+      photoCaption.textContent = photos[photoIndex].title;
+
+      document.querySelectorAll(".thumb").forEach((item, i) => {
+        item.classList.toggle("active", i === photoIndex);
+      });
+    }
+
+    function nextPhoto() {
+      showPhoto(photoIndex + 1);
+    }
+
+    function previousPhoto() {
+      showPhoto(photoIndex - 1);
+    }
+
+    function toggleAutoPlay() {
+      autoPlay = !autoPlay;
+      document.getElementById("autoBtn").textContent =
+        autoPlay ? "暂停轮播" : "开始轮播";
+
+      if (autoPlay) {
+        startPhotoTimer();
+      } else {
+        clearInterval(photoTimer);
+      }
+    }
+
+    function startPhotoTimer() {
+      clearInterval(photoTimer);
+      photoTimer = setInterval(() => {
+        if (autoPlay) nextPhoto();
+      }, 5000);
+    }
+
+    photos.forEach((photo, index) => {
+      const button = document.createElement("button");
+      button.className = "thumb";
+      button.innerHTML = `<img src="${photo.url}" alt="${photo.title}">`;
+      button.addEventListener("click", () => showPhoto(index));
+      thumbs.appendChild(button);
+    });
+
+    showPhoto(0);
+    startPhotoTimer();
+
+
+    // =========================
+    // 游戏一：快速点击目标
+    // =========================
+
+    let targetScore = 0;
+    let targetTime = 30;
+    let targetTimer;
+
+    const target = document.getElementById("target");
+    const targetArea = document.getElementById("targetArea");
+
+    function moveTarget() {
+      const maxX = targetArea.clientWidth - target.offsetWidth;
+      const maxY = targetArea.clientHeight - target.offsetHeight;
+
+      target.style.left = Math.max(0, Math.random() * maxX) + "px";
+      target.style.top = Math.max(0, Math.random() * maxY) + "px";
+    }
+
+    function startTargetGame() {
+      clearInterval(targetTimer);
+
+      targetScore = 0;
+      targetTime = 30;
+
+      document.getElementById("targetScore").textContent = targetScore;
+      document.getElementById("targetTime").textContent = targetTime;
+      document.getElementById("targetResult").textContent = "游戏开始，集中注意力！";
+
+      target.style.display = "block";
+      moveTarget();
+
+      targetTimer = setInterval(() => {
+        targetTime--;
+        document.getElementById("targetTime").textContent = targetTime;
+
+        if (targetTime <= 0) {
+          clearInterval(targetTimer);
+          target.style.display = "none";
+          document.getElementById("targetResult").textContent =
+            `游戏结束！你一共点击了 ${targetScore} 次。`;
+        }
+      }, 1000);
+    }
+
+    target.addEventListener("click", () => {
+      if (targetTime > 0) {
+        targetScore++;
+        document.getElementById("targetScore").textContent = targetScore;
+        moveTarget();
+      }
+    });
+
+
+    // =========================
+    // 游戏二：记忆翻牌
+    // =========================
+
+    const memoryIcons = ["🌳", "🌊", "☀️", "🌙", "🏔️", "🌸", "☁️", "🦋"];
+    let memoryCards = [];
+    let openedCards = [];
+    let memoryMoves = 0;
+    let memoryPairs = 0;
+    let memoryLocked = false;
+
+    function startMemoryGame() {
+      memoryCards = [...memoryIcons, ...memoryIcons]
+        .sort(() => Math.random() - 0.5)
+        .map((icon, index) => ({
+          id: index,
+          icon,
+          opened: false,
+          matched: false
+        }));
+
+      openedCards = [];
+      memoryMoves = 0;
+      memoryPairs = 0;
+      memoryLocked = false;
+
+      document.getElementById("memoryMoves").textContent = 0;
+      document.getElementById("memoryPairs").textContent = 0;
+      document.getElementById("memoryResult").textContent = "";
+
+      renderMemoryBoard();
+    }
+
+    function renderMemoryBoard() {
+      const board = document.getElementById("memoryBoard");
+      board.innerHTML = "";
+
+      memoryCards.forEach(card => {
+        const button = document.createElement("button");
+        button.className = "memory-card";
+
+        if (card.opened || card.matched) {
+          button.textContent = card.icon;
+          button.classList.add("open");
+        } else {
+          button.textContent = "?";
+        }
+
+        button.addEventListener("click", () => openMemoryCard(card.id));
+        board.appendChild(button);
+      });
+    }
+
+    function openMemoryCard(id) {
+      if (memoryLocked) return;
+
+      const card = memoryCards.find(item => item.id === id);
+
+      if (!card || card.opened || card.matched) return;
+
+      card.opened = true;
+      openedCards.push(card);
+      renderMemoryBoard();
+
+      if (openedCards.length === 2) {
+        memoryMoves++;
+        document.getElementById("memoryMoves").textContent = memoryMoves;
+
+        const [first, second] = openedCards;
+
+        if (first.icon === second.icon) {
+          first.matched = true;
+          second.matched = true;
+          openedCards = [];
+          memoryPairs++;
+
+          document.getElementById("memoryPairs").textContent = memoryPairs;
+
+          if (memoryPairs === memoryIcons.length) {
+            document.getElementById("memoryResult").textContent =
+              `完成！你用了 ${memoryMoves} 步找到了全部配对。`;
+          }
+
+          renderMemoryBoard();
+        } else {
+          memoryLocked = true;
+
+          setTimeout(() => {
+            first.opened = false;
+            second.opened = false;
+            openedCards = [];
+            memoryLocked = false;
+            renderMemoryBoard();
+          }, 800);
+        }
+      }
+    }
+
+    startMemoryGame();
+
+
+    // =========================
+    // 游戏三：颜色反应
+    // =========================
+
+    const colorNames = ["红色", "蓝色", "绿色", "黄色"];
+    const colorClasses = {
+      "红色": "red",
+      "蓝色": "blue",
+      "绿色": "green",
+      "黄色": "yellow"
+    };
+
+    let colorAnswer = "";
+    let colorScore = 0;
+    let colorRound = 0;
+    let colorPlaying = false;
+
+    function startColorGame() {
+      colorScore = 0;
+      colorRound = 0;
+      colorPlaying = true;
+
+      document.getElementById("colorScore").textContent = 0;
+      document.getElementById("colorRound").textContent = 0;
+      document.getElementById("colorResult").textContent =
+        "请点击文字所表示的颜色。";
+
+      nextColorQuestion();
+    }
+
+    function nextColorQuestion() {
+      const word = colorNames[Math.floor(Math.random() * colorNames.length)];
+      const background = colorNames[Math.floor(Math.random() * colorNames.length)];
+
+      colorAnswer = word;
+
+      const colorWord = document.getElementById("colorWord");
+      colorWord.textContent = word;
+      colorWord.className = "color-box " + colorClasses[background];
+    }
+
+    function chooseColor(answer) {
+      if (!colorPlaying) {
+        document.getElementById("colorResult").textContent =
+          "请先点击“开始游戏”。";
+        return;
+      }
+
+      colorRound++;
+
+      if (answer === colorAnswer) {
+        colorScore++;
+        document.getElementById("colorResult").textContent = "正确，继续保持！";
+      } else {
+        document.getElementById("colorResult").textContent =
+          `不正确，正确答案是${colorAnswer}。`;
+      }
+
+      document.getElementById("colorScore").textContent = colorScore;
+      document.getElementById("colorRound").textContent = colorRound;
+
+      if (colorRound >= 20) {
+        colorPlaying = false;
+        document.getElementById("colorWord").textContent = "完成";
+        document.getElementById("colorResult").textContent =
+          `训练结束，你答对了 ${colorScore}/20 题。`;
+      } else {
+        nextColorQuestion();
+      }
+    }
+  </script>
+</body>
+</html>
